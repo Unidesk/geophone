@@ -22,6 +22,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
     </head>
     <body>
-        <div>This is an API server that delivers the LibPhoneAPI library via a REST interface.</div>
+        <h2>Geophone API server</h2>
+        <p>Geophone is a very simple API server that delivers the LibPhoneAPI library via a REST interface, created and hosted by
+            Unidesk Corporation (<a href="http://www.unidesk.com">www.unidesk.com</a>).  This is a private API server, but
+            the source code is published on GitHub at <a href="http://www.github.com/Unidesk/geophone">Unidesk/geophone</a> if
+            you wish to host your own server.</p>
+        <p>To use GeoPhone, the API end-point is /geophone/API?key=XYZ where XYZ is a license key according to the
+            license key file keys.xml.</p>
+        <h3><b>APIs</b></h3>
+        <ul><li>/geophone/lookup?phone=XXXXXXXX&key=XYZ</li>
+        <li>/geophone/batch&key=XYZ</li>
+        </ul>
+        
     </body>
 </html>

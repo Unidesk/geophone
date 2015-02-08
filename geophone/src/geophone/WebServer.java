@@ -28,6 +28,9 @@ import java.util.logging.Logger;
 import server.nanohttpd.NanoHTTPD;
 import static server.nanohttpd.NanoHTTPD.MIME_HTML;
 import static server.nanohttpd.NanoHTTPD.MIME_PLAINTEXT;
+import com.google.i18n.phonenumbers;
+import com.google.i18n.phonenumbers.geocoding;
+
 
 /**
  *
@@ -116,8 +119,12 @@ public class WebServer extends NanoHTTPD {
 			else if (uri.startsWith(INVENTORY))
 				responseStr = sh.inventory(params);
 			*/
-			else if (uri.startsWith("/test"))
+			else if (uri.startsWith("/test")) {
+				PhoneNumberOfflineGeocoder geocoder = PhoneNumberOfflineGeocoder.getInstance();
+				// Outputs "Zurich"
+				System.out.println(geocoder.getDescriptionForNumber(swissNumberProto, Locale.ENGLISH));
 				responseStr = "got test";
+			}
 			else //standard file
 			{
 				System.out.println("URI: " + uri);

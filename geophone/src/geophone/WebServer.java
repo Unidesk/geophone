@@ -22,15 +22,17 @@ import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import server.nanohttpd.NanoHTTPD;
 import static server.nanohttpd.NanoHTTPD.MIME_HTML;
 import static server.nanohttpd.NanoHTTPD.MIME_PLAINTEXT;
-import com.google.i18n.phonenumbers;
-import com.google.i18n.phonenumbers.geocoding;
-
+import com.google.i18n.phonenumbers.geocoding.*;
+import com.google.i18n.phonenumbers.*;
+import com.google.i18n.phonenumbers.PhoneNumberUtil.PhoneNumberFormat;
+import com.google.i18n.phonenumbers.Phonenumber.PhoneNumber;
 
 /**
  *
@@ -120,10 +122,30 @@ public class WebServer extends NanoHTTPD {
 				responseStr = sh.inventory(params);
 			*/
 			else if (uri.startsWith("/test")) {
-				PhoneNumberOfflineGeocoder geocoder = PhoneNumberOfflineGeocoder.getInstance();
-				// Outputs "Zurich"
-				System.out.println(geocoder.getDescriptionForNumber(swissNumberProto, Locale.ENGLISH));
-				responseStr = "got test";
+				PhoneNumberUtil phoneUtil = PhoneNumberUtil.getInstance();
+				responseStr = "failed";
+				try {
+					PhoneNumber numberProto = phoneUtil.parse(params.get("phone"), "US");
+
+					responseStr = "Phone results for " + params.get("phone") + "\r";
+					/*
+					responseStr += "Number valid for region: " + phoneUtil.isValidNumberForRegion(numberProto, "US") + "\r";
+					responseStr += "International: " + phoneUtil.format(numberProto, PhoneNumberFormat.INTERNATIONAL) + "\r";
+					responseStr += "National: " + phoneUtil.format(numberProto, PhoneNumberFormat.NATIONAL) + "\r";
+					*/
+					if (phoneUtil.isValidNumberForRegion(numberProto, "US"))
+						responseStr += "Reformatted number: " + phoneUtil.format(numberProto, PhoneNumberFormat.NATIONAL) + "\r";
+					else
+						responseStr += "Reformatted number: " + phoneUtil.format(numberProto, PhoneNumberFormat.INTERNATIONAL) + "\r";
+						
+					
+					PhoneNumberOfflineGeocoder geocoder = PhoneNumberOfflineGeocoder.getInstance();
+					responseStr += "Country: " + phoneUtil.getRegionCodeForNumber(numberProto) + "\r";
+					responseStr += "State/province: ";
+					responseStr += geocoder.getDescriptionForNumber(numberProto, Locale.ENGLISH) + "\r";
+				} catch (NumberParseException e) {
+				  System.err.println("NumberParseException was thrown: " + e.toString());
+				}
 			}
 			else //standard file
 			{

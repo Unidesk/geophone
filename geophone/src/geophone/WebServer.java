@@ -148,7 +148,12 @@ public class WebServer extends NanoHTTPD {
 							Map<String, String> postKeys = new HashMap<String, String>();
 							try {
 								session.parseBody(postKeys);
-								jsonNumbers = postKeys.get("postBody");
+								/*
+								System.out.println("Got " + postKeys.size() + " keys");
+								for (String x : postKeys.keySet())
+									System.out.println("Key is " + x);
+								*/
+								jsonNumbers = postKeys.get("postData");
 							} catch (IOException | ResponseException ex) {
 								JSONObject json = new JSONObject();
 								json.put("valid", false);
@@ -228,7 +233,7 @@ public class WebServer extends NanoHTTPD {
 						return response;
 					} catch (FileNotFoundException ex) {
 						System.err.println("File not found: " + ROOT_DIR + uri);
-						String fail = "{\"file\":\"notFound\"}";
+						String fail = "{ \"valid\": false, \"errorReason\": \"File '" + ROOT_DIR + uri + "' not found\" }";
 						response.setData(new ByteArrayInputStream(fail.getBytes()));
 						response.setMimeType(mimeType);
 						response.setStatus(Response.Status.OK);
@@ -245,7 +250,7 @@ public class WebServer extends NanoHTTPD {
 			default:
 				System.err.println("Invalid request (not GET or POST)");
 				mimeType = mimeTypes.get("json");
-				String fail = "{}";
+				String fail = "{ \"valid\": false, \"errorReason\": \"Invalid request (not GET or POST)\" }";
 				response.setData(new ByteArrayInputStream(fail.getBytes()));
 				response.setMimeType(mimeType);
 				response.setStatus(Response.Status.OK);

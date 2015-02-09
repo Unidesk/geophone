@@ -22,17 +22,13 @@ import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.util.LinkedHashMap;
-import java.util.Locale;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.json.simple.JSONObject;
 import server.nanohttpd.NanoHTTPD;
 import static server.nanohttpd.NanoHTTPD.MIME_HTML;
 import static server.nanohttpd.NanoHTTPD.MIME_PLAINTEXT;
-import com.google.i18n.phonenumbers.geocoding.*;
-import com.google.i18n.phonenumbers.*;
-import com.google.i18n.phonenumbers.PhoneNumberUtil.PhoneNumberFormat;
-import com.google.i18n.phonenumbers.Phonenumber.PhoneNumber;
 
 /**
  *
@@ -48,9 +44,9 @@ public class WebServer extends NanoHTTPD {
 	private Map<String, String> mimeTypes = new LinkedHashMap<String, String>();
 
 	private final String[] MAIN
-		= {
-			"/", ""
-		};
+			= {
+				"/", ""
+			};
 
 	private final String XSS_KEY = "Access-Control-Allow-Origin";
 	private final String XSS_VALUE = "*";
@@ -80,18 +76,22 @@ public class WebServer extends NanoHTTPD {
 			String uri = session.getUri();
 
 			//=== PARSE URI===
-			if (main.Main.DEBUG)
+			if (main.Main.DEBUG) {
 				System.out.println("Unparsed: " + method + " '" + uri + "' ");
+			}
 			if (uri.endsWith("/"))//remove the last slash on a uri
-			
+			{
 				uri = uri.substring(0, uri.length() - 1);
-			if (uri.startsWith(API_SUBDIR + "/"))
+			}
+			if (uri.startsWith(API_SUBDIR + "/")) {
 				uri = uri.replaceFirst(API_SUBDIR, "");
-			if (main.Main.DEBUG)
+			}
+			if (main.Main.DEBUG) {
 				System.out.println("Parsed:   " + method + " '" + uri + "' ");
+			}
 			//===END PARSE URI===
 
-			if (uri.equals(MAIN[0]) || uri.equals(MAIN[1]))
+			if (uri.equals(MAIN[0]) || uri.equals(MAIN[1])) {
 				try {
 //                    return new NanoHTTPD.Response(NanoHTTPD.Response.Status.ACCEPTED, MIME_HTML, new FileInputStream(PAGE_TO_SERVE));//
 					response.setData(new FileInputStream(PAGE_TO_SERVE));
@@ -107,61 +107,38 @@ public class WebServer extends NanoHTTPD {
 					return response;
 //                    return new NanoHTTPD.Response(NanoHTTPD.Response.Status.INTERNAL_ERROR, MIME_HTML, "Failed to load page.");
 				}
-			/*
-			else if (uri.startsWith(ENQUEUE))
-				responseStr = sh.enqueue(params);
-			else if (uri.startsWith(STATUS))
-				responseStr = sh.status(params);
-			else if (uri.startsWith(CLEAR_QUEUE))
-				responseStr = sh.clearQueue(params);
-			else if (uri.startsWith(GET_VAR))
-				responseStr = sh.getVar(params);
-			else if (uri.startsWith(SET_VAR))
-				responseStr = sh.setVar(params);
-			else if (uri.startsWith(INVENTORY))
-				responseStr = sh.inventory(params);
-			*/
-			else if (uri.startsWith("/test")) {
-				PhoneNumberUtil phoneUtil = PhoneNumberUtil.getInstance();
-				responseStr = "failed";
-				try {
-					PhoneNumber numberProto = phoneUtil.parse(params.get("phone"), "US");
-
-					responseStr = "Phone results for " + params.get("phone") + "\r";
-					/*
-					responseStr += "Number valid for region: " + phoneUtil.isValidNumberForRegion(numberProto, "US") + "\r";
-					responseStr += "International: " + phoneUtil.format(numberProto, PhoneNumberFormat.INTERNATIONAL) + "\r";
-					responseStr += "National: " + phoneUtil.format(numberProto, PhoneNumberFormat.NATIONAL) + "\r";
-					*/
-					if (phoneUtil.isValidNumberForRegion(numberProto, "US"))
-						responseStr += "Reformatted number: " + phoneUtil.format(numberProto, PhoneNumberFormat.NATIONAL) + "\r";
-					else
-						responseStr += "Reformatted number: " + phoneUtil.format(numberProto, PhoneNumberFormat.INTERNATIONAL) + "\r";
-						
-					
-					PhoneNumberOfflineGeocoder geocoder = PhoneNumberOfflineGeocoder.getInstance();
-					responseStr += "Country: " + phoneUtil.getRegionCodeForNumber(numberProto) + "\r";
-					responseStr += "State/province: ";
-					responseStr += geocoder.getDescriptionForNumber(numberProto, Locale.ENGLISH) + "\r";
-				} catch (NumberParseException e) {
-				  System.err.println("NumberParseException was thrown: " + e.toString());
+			} else if (uri.startsWith("/lookup")) {
+				if (Settings.validateKey(params.get("key"))) {
+					String owner = Settings.keyOwner(params.get("key"));
+					String number = params.get("number");
+					System.out.println("Looking up " + number + " for " + owner);
+					JSONObject json = PhoneManager.json(number);
+					responseStr = json.toJSONString();
+				} else {
+					JSONObject json = new JSONObject();
+					json.put("valid", false);
+					json.put("errorReason", "INVALID_KEY");
+					System.err.println("REJECT: Invalid key " + params.get("key") + " on number " + params.get("number"));
+					responseStr = json.toJSONString();
 				}
-			}
-			else //standard file
+			} else //standard file
 			{
 				System.out.println("URI: " + uri);
 				String[] pieces = uri.split("\\.");
 				String extension = null;
 
-				if (pieces.length != 0)
+				if (pieces.length != 0) {
 					extension = pieces[pieces.length - 1];
-				if (main.Main.DEBUG)
+				}
+				if (main.Main.DEBUG) {
 					System.out.print("Extension: " + extension + " ");
+				}
 
-				if (extension != null && mimeTypes.get(extension) != null)
+				if (extension != null && mimeTypes.get(extension) != null) {
 					mimeType = mimeTypes.get(extension);
-				else
+				} else {
 					mimeType = MIME_PLAINTEXT;
+				}
 				System.out.println("MimeType: " + mimeType);
 
 				try {
@@ -178,13 +155,6 @@ public class WebServer extends NanoHTTPD {
 					return response;
 				}
 
-//                String fail = "{}";
-//                response.setData(new ByteArrayInputStream(fail.getBytes()));
-//                response.setMimeType(mimeType);
-//                response.setStatus(Response.Status.OK);
-//                return response;
-				//return a plaintext of any file
-//                    return new NanoHTTPD.Response(NanoHTTPD.Response.Status.ACCEPTED, MIME_PLAINTEXT, new FileInputStream(ROOT_DIR + uri));
 			}
 			//Real response
 			mimeType = mimeTypes.get("json");
@@ -192,9 +162,7 @@ public class WebServer extends NanoHTTPD {
 			response.setMimeType(mimeType);
 			response.setStatus(Response.Status.OK);
 			return response;
-			//return the response string
-//            return new NanoHTTPD.Response(NanoHTTPD.Response.Status.ACCEPTED, mimeType, responseStr);
-		} else//not GET, 
+		} else //not GET, 
 		{
 			System.err.println("NOT GET");
 			mimeType = mimeTypes.get("json");
@@ -203,21 +171,7 @@ public class WebServer extends NanoHTTPD {
 			response.setMimeType(mimeType);
 			response.setStatus(Response.Status.OK);
 			return response;
-//            System.err.println("Not GET request");
-//            return new NanoHTTPD.Response("Please use GET Requests.");
 		}
 	}
 
 }
-//else if (uri.startsWith(FAVICON))
-//            {
-//                System.out.println("Loading favicon: " + ROOT_DIR + "/favicon.ico");
-//                try
-//                {
-//                    return new NanoHTTPD.Response(NanoHTTPD.Response.Status.ACCEPTED, "image/x-icon", new FileInputStream(ROOT_DIR + "/favicon.ico"));//
-//                }
-//                catch (FileNotFoundException ex)
-//                {
-//                    Logger.getLogger(MainClass.class.getName()).log(Level.SEVERE, null, ex);
-//                }
-//            }

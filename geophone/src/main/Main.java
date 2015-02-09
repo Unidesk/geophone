@@ -18,6 +18,7 @@
  */
 package main;
 
+import geophone.Settings;
 import geophone.WebServer;
 import server.nanohttpd.ServerRunner;
 
@@ -26,7 +27,7 @@ import server.nanohttpd.ServerRunner;
  */
 public class Main {
 
-    public static final boolean DEBUG = true;
+    public static final boolean DEBUG = false;
 
     /**
      * @param args the command line arguments
@@ -34,6 +35,9 @@ public class Main {
     public static void main(String[] args) {
         // merge stdout and stderr so we have a clean output
         System.setErr(System.out);
+		
+		// initialize
+		Settings.loadSettings();
 
         // start up the web server
         ServerRunner.run(WebServer.class);

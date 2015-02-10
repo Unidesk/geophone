@@ -1,25 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-Copyright (C) 2015 Unidesk Corporation
+License key file for geophone
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+The key can be of any value, though GUIDs generally work nicely since they are difficult to guess.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+There can be any number of license keys defined.
 -->
 
 
 <geophone>
     <keys>
-        <key owner="Unidesk SFDC instance">ea84d5bb-15c8-42d3-abb9-2a3e661bef5d</key>
-        <key owner="Debugging">1</key>
+        <key owner="Example API user">ea84d5bb-15c8-42d3-abb9-2a3e661bef5d</key>
+        <key owner="Simple key example">1</key>
     </keys>
 </geophone>

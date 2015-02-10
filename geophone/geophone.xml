@@ -9,6 +9,9 @@ There can be any number of license keys defined.
 
 
 <geophone>
+    <server>
+        <port>8081</port>
+    </server>
     <keys>
         <key owner="Example API user">ea84d5bb-15c8-42d3-abb9-2a3e661bef5d</key>
         <key owner="Simple key example">1</key>

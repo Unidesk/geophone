@@ -40,6 +40,7 @@ public class PhoneManager {
 	 * reformattedNumber: Phone number in new format (if valid true)
 	 * country: Country code for the phone number (if valid true)
 	 * stateProvince: state/province for the number (if valid true)
+	 * city: city name (if valid true, and if available, may be empty string)
 	 * 
 	 * @param phoneNumber Phone number to look up
 	 * @return JSONObject with formatted json results
@@ -63,11 +64,31 @@ public class PhoneManager {
 					reformattedNumber = phoneUtil.format(numberProto, PhoneNumberUtil.PhoneNumberFormat.INTERNATIONAL);
 				json.put("reformattedNumber", reformattedNumber);
 				PhoneNumberOfflineGeocoder geocoder = PhoneNumberOfflineGeocoder.getInstance();
-				String stateProvince = geocoder.getDescriptionForNumber(numberProto, Locale.ENGLISH);
+				String stateProvinceCity = geocoder.getDescriptionForNumber(numberProto, Locale.ENGLISH);
 				String country = phoneUtil.getRegionCodeForNumber(numberProto);
+				
+				// stateProvinceCity may be "city, state".  If so, parse it out
+				String[] parts = stateProvinceCity.split(",", 2);
+				String stateProvince;
+				String city;
+				if (parts.length == 1) {
+					stateProvince = parts[0].trim();
+					city = "";
+				} else {
+					stateProvince = parts[1].trim();
+					city = parts[0].trim();
+				}
+				
+				// now see if we can clean up the state name
+				String stateAbbreviation = StateMap.getInstance().findAbbreviation(stateProvince);
+				if (stateAbbreviation != null)
+					stateProvince = stateAbbreviation;
+				
+				// json encode them
+				json.put("city", city);
 				json.put("stateProvince", stateProvince);
 				json.put("country", country);
-				System.out.println("   RESULT: " + reformattedNumber + " [" + stateProvince + "/" + country + "]");
+				System.out.println("   RESULT: " + reformattedNumber + " [" + city + "/" + stateProvince + "/" + country + "]");
 			} else {
 				System.err.println("   ERROR: Invalid phone number");
 				json.put("valid", false);

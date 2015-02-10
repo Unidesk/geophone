@@ -40,8 +40,6 @@ import static server.nanohttpd.NanoHTTPD.MIME_PLAINTEXT;
  */
 public class WebServer extends NanoHTTPD {
 
-	private static final int PORT = 8081;
-
 	private final String ROOT_DIR = "./webRootFolder";
 
 	private final String API_SUBDIR = "/geophone";
@@ -60,9 +58,9 @@ public class WebServer extends NanoHTTPD {
 	private final String PAGE_TO_SERVE = ROOT_DIR + "/geophone.html";
 
 	private String mimeType = MIME_PLAINTEXT;
-
+	
 	public WebServer() {
-		super(PORT);
+		super(Settings.port());
 		mimeTypes.put("js", "application/javascript");
 		mimeTypes.put("html", MIME_HTML);
 		mimeTypes.put("htm", MIME_HTML);
@@ -128,7 +126,7 @@ public class WebServer extends NanoHTTPD {
 						System.err.println("REJECT: Invalid key " + params.get("key") + " on number " + params.get("number"));
 						responseStr = json.toJSONString();
 					}
-				} else if (uri.startsWith("/batch")) {
+				} else if (uri.startsWith("/bulk")) {
 					if (!Settings.validateKey(params.get("key"))) {
 						JSONObject json = new JSONObject();
 						json.put("valid", false);

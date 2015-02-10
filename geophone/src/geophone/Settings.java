@@ -35,7 +35,8 @@ import org.xml.sax.SAXException;
 public class Settings {
 
 	static HashMap<String, String> keys = new HashMap<>();
-
+	static int port = 80;
+	
 	public static void loadSettings() {
 		try {
 			DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
@@ -55,6 +56,8 @@ public class Settings {
 					System.out.println("Key is " + key + " for " + owner);
 				keys.put(key, owner);
 			}
+			
+			port = Integer.valueOf(xpath.evaluate("geophone/server/port", document));
 		} catch (ParserConfigurationException e) {
 			System.out.println("Parser error " + e.getMessage());
 		} catch (SAXException e) {
@@ -72,5 +75,9 @@ public class Settings {
 	
 	public static String keyOwner(String key) {
 		return keys.get(key);
+	}
+	
+	public static int port() {
+		return port;
 	}
 }

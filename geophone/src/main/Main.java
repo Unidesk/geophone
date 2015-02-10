@@ -20,26 +20,56 @@ package main;
 
 import geophone.Settings;
 import geophone.WebServer;
-import server.nanohttpd.ServerRunner;
+import java.io.IOException;
+import server.nanohttpd.NanoHTTPD;
 
 /**
  *
  */
 public class Main {
 
-    public static final boolean DEBUG = false;
+	public static final boolean DEBUG = false;
 
-    /**
-     * @param args the command line arguments
-     */
-    public static void main(String[] args) {
-        // merge stdout and stderr so we have a clean output
-        System.setErr(System.out);
-		
+	/**
+	 * @param args the command line arguments
+	 */
+	public static void main(String[] args) {
+		// merge stdout and stderr so we have a clean output
+		System.setErr(System.out);
+
 		// initialize
 		Settings.loadSettings();
 
-        // start up the web server
-        ServerRunner.run(WebServer.class);
-    }
+		// start up the web server
+		run(WebServer.class);
+	}
+
+	public static void run(Class serverClass) {
+		try {
+			executeInstance((NanoHTTPD) serverClass.newInstance());
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	public static void executeInstance(NanoHTTPD server) {
+		try {
+			server.start();
+		} catch (IOException ioe) {
+			System.err.println("Couldn't start server:" + ioe);
+			System.exit(-1);
+		}
+		System.out.println("Server started.");
+
+		try {
+			while (server.isAlive()) {
+				Thread.sleep(500);
+			}
+		} catch (Exception ignore) {
+		}
+
+		server.stop();
+		System.out.println("Server stopped.");
+
+	}
 }

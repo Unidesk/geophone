@@ -59,6 +59,11 @@ public class WebServer extends NanoHTTPD {
 
 	private String mimeType = MIME_PLAINTEXT;
 	
+	private class NumberCollection {
+		public String id;
+		public ArrayList<String> numbers;
+	}
+	
 	public WebServer() {
 		super(Settings.port());
 		mimeTypes.put("js", "application/javascript");
@@ -105,7 +110,7 @@ public class WebServer extends NanoHTTPD {
 						return response;
 					} catch (FileNotFoundException ex) {
 						Logger.getLogger(WebServer.class.getName()).log(Level.SEVERE, null, ex);
-						String fail = "{main file not found}";
+						String fail = "<body><h2>Internal error</h2><p>Unable to load " + PAGE_TO_SERVE + "</p></body>";
 						response.setData(new ByteArrayInputStream(fail.getBytes()));
 						response.setMimeType(MIME_HTML);
 						response.setStatus(Response.Status.OK);
@@ -116,8 +121,15 @@ public class WebServer extends NanoHTTPD {
 					if (Settings.validateKey(params.get("key"))) {
 						String owner = Settings.keyOwner(params.get("key"));
 						String number = params.get("number");
-						System.out.println("Looking up " + number + " for key '" + owner + "'");
-						JSONObject json = PhoneManager.json(number);
+						String altNumber = params.get("alt");
+						ArrayList<String> numbers = new ArrayList<>();
+						numbers.add(number);
+						if (altNumber != null) {
+							System.out.println("Looking up " + number + " (alt " + altNumber + ") for key '" + owner + "'");
+							numbers.add(altNumber);
+						} else
+							System.out.println("Looking up " + number + " for key '" + owner + "'");
+						JSONObject json = PhoneManager.json(numbers);
 						responseStr = json.toJSONString();
 					} else {
 						JSONObject json = new JSONObject();
@@ -139,7 +151,6 @@ public class WebServer extends NanoHTTPD {
 						
 						// batch request.  We support both GET and POST on this one.  GET takes
 						// parameters over query string and POST takes them from POST data in JSON format
-						ArrayList<String> numbers = new ArrayList<>();
 						String jsonNumbers = null;
 						if (method == NanoHTTPD.Method.POST) {
 							// post
@@ -164,31 +175,57 @@ public class WebServer extends NanoHTTPD {
 							if (params.get("json") != null) {
 								jsonNumbers = params.get("json");
 							} else {
+								jsonNumbers = "[";
 								for (int index = 1; true; ++index) {
 									String number = params.get("n" + index);
 									if ((number == null) || (number.isEmpty()))
 										break;
-									numbers.add(number);
+									String altNumber = params.get("a" + index);
+									if (jsonNumbers != "[")
+										jsonNumbers += ",";
+									if ((altNumber == null) || (altNumber.isEmpty()))
+										jsonNumbers += "{\"id\": \"qs-" + index + "\", \"number\": \"" + number + "\"}";
+									else
+										jsonNumbers += "{\"id\": \"qs-" + index + "\", \"number\": [\"" + number + "\", \"" + altNumber + "\"]}";
 								}
+								jsonNumbers += "]";
 							}
 						}
 						
+						// define resulting numbers array
+						ArrayList<NumberCollection> numberCollection = new ArrayList<>();
+						
 						// if no response (ie, no error) continue with the processing
 						if (responseStr == null) {
-							// do we have jsonNumbers to decode?
-							if (jsonNumbers != null) {
-								System.out.println("JSON query: " + jsonNumbers);
-								try {
-									JSONArray jsonParse = (JSONArray) JSONValue.parse(jsonNumbers);
-									for (Object number : jsonParse)
-										numbers.add((String) number);
-								} catch (Exception e) {
-									JSONObject json = new JSONObject();
-									json.put("valid", false);
-									json.put("errorReason", "INVALID_JSON: " + e.getMessage());
-									System.err.println("Invalid JSON: " + e.getMessage());
-									responseStr = json.toJSONString();									
+							System.out.println("JSON query: " + jsonNumbers);
+							try {
+								// get array of requests
+								JSONArray jsonParse = (JSONArray) JSONValue.parse(jsonNumbers);
+								// parse each object of id and number
+								for (Object request : jsonParse) {
+									String id = (String) ((JSONObject) request).get("id");
+									Object number = ((JSONObject) request).get("number");
+									
+									NumberCollection nc = new NumberCollection();
+									nc.id = id;
+									nc.numbers = new ArrayList<>();
+									if (number instanceof JSONArray) {
+										// array of numbers
+										for (Object num : (JSONArray) number)
+											nc.numbers.add((String) num);
+									} else {
+										// single number
+										nc.numbers.add((String) number);
+									}
+									numberCollection.add(nc);
 								}
+							} catch (Exception e) {
+								JSONObject json = new JSONObject();
+								json.put("valid", false);
+								json.put("errorReason", "INVALID_JSON: " + e.getMessage());
+								System.err.println("Invalid JSON: " + e.getMessage());
+								e.printStackTrace();
+								responseStr = json.toJSONString();									
 							}
 						}
 						
@@ -196,9 +233,10 @@ public class WebServer extends NanoHTTPD {
 						if (responseStr == null) {
 							// now process all numbers in the numbers list
 							JSONArray container = new JSONArray();
-							for (String number : numbers) {
-								System.out.println("Looking up " + number + " for key '" + owner + "'");
-								JSONObject json = PhoneManager.json(number);
+							for (NumberCollection item : numberCollection) {
+								System.out.println("Looking up id '" + item.id + "' for key '" + owner + "'");
+								JSONObject json = PhoneManager.json(item.numbers);
+								json.put("id", item.id);
 								container.add(json);
 							}
 							responseStr = container.toJSONString();

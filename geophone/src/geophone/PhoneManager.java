@@ -20,6 +20,7 @@ import com.google.i18n.phonenumbers.NumberParseException;
 import com.google.i18n.phonenumbers.PhoneNumberUtil;
 import com.google.i18n.phonenumbers.Phonenumber;
 import com.google.i18n.phonenumbers.geocoding.PhoneNumberOfflineGeocoder;
+import java.util.ArrayList;
 import java.util.Locale;
 import main.Main;
 import org.json.simple.JSONObject;
@@ -31,32 +32,64 @@ import org.json.simple.JSONObject;
 public class PhoneManager {
 
 	/**
-	 * lookup phone information and return JSON object with results
+	 * lookup phone information for a primary or alternate number and return JSON object with results
 	 * 
 	 * The resulting json object will contain:
-	 * originalPhone: Original phone number
 	 * valid: boolean true/false if valid number
-	 * errorReason: if valid is false, this contains the reason
+	 * errorReason: if valid is false, this contains the reason.
 	 * reformattedNumber: Phone number in new format (if valid true)
 	 * country: Country code for the phone number (if valid true)
 	 * stateProvince: state/province for the number (if valid true)
 	 * city: city name (if valid true, and if available, may be empty string)
 	 * 
+	 * @param phoneNumbers Phone number(s) to look up, in order (first successful one is returned)
+	 * @return JSONObject with formatted json results
+	 */
+	public static JSONObject json(ArrayList<String> phoneNumbers) {
+		// make sure we have at least one number
+		if (phoneNumbers.size() == 0) {
+			JSONObject json = new JSONObject();
+			json.put("valid", false);
+			json.put("errorReason", "   ERROR: No numbers provided");	
+			return json;
+		}
+		// process all numbers
+		for (String phoneNumber : phoneNumbers) {
+			// start with primary number
+			JSONObject json = json(phoneNumber);
+			if ((boolean) json.get("valid")) {
+				json.put("originalNumber", phoneNumber);
+				return json;
+			}
+
+			// again with "+"
+			json = json("+" + phoneNumber);
+			if ((boolean) json.get("valid")) {
+				json.put("originalNumber", phoneNumber);
+				return json;
+			}
+		}
+		
+		// give up - return original error reason
+		return json(phoneNumbers.get(0));
+	}
+	
+	/**
+	 * internal lookup phone information and return JSON object with results
+	 * 
 	 * @param phoneNumber Phone number to look up
 	 * @return JSONObject with formatted json results
 	 */
-	public static JSONObject json(String phoneNumber) {
+	private static JSONObject json(String phoneNumber) {
 		JSONObject json = new JSONObject();
 		PhoneNumberUtil phoneUtil = PhoneNumberUtil.getInstance();
 
 		try {
 			Phonenumber.PhoneNumber numberProto = phoneUtil.parse(phoneNumber, "US");
 
-			json.put("originalPhone", phoneNumber);
-
 			if (phoneUtil.isValidNumber(numberProto)) {
 				json.put("valid", true);
-
+				
 				String reformattedNumber;
 				if (phoneUtil.isValidNumberForRegion(numberProto, "US"))
 					reformattedNumber = phoneUtil.format(numberProto, PhoneNumberUtil.PhoneNumberFormat.NATIONAL);
@@ -96,8 +129,8 @@ public class PhoneManager {
 			}
 		} catch (NumberParseException e) {
 			json.put("valid", false);
-			json.put("errorReason", "   ERROR: " + e.toString());	
-			System.err.println("NumberParseException was thrown: " + e.toString());
+			json.put("errorReason", "ERROR: " + e.toString());	
+			System.err.println("   NumberParseException was thrown: " + e.toString());
 		}
 		
 		return json;

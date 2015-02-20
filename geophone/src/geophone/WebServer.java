@@ -23,6 +23,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -197,7 +198,7 @@ public class WebServer extends NanoHTTPD {
 						
 						// if no response (ie, no error) continue with the processing
 						if (responseStr == null) {
-							System.out.println("JSON query: " + jsonNumbers);
+							System.out.println(new Date().toString() + " JSON query: " + jsonNumbers);
 							try {
 								// get array of requests
 								JSONArray jsonParse = (JSONArray) JSONValue.parse(jsonNumbers);
